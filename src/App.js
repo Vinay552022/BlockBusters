@@ -55,7 +55,7 @@ function FileUpload() {
       {uploadResult && (
         <div>
           <h3>Upload Successful!</h3>
-          <p>IPFS Hash: {uploadResult.IpfsHash}</p>
+          <p>IPFS Ha: {uploadResult.IpfsHash}</p>
         </div>
       )}
     </div>
