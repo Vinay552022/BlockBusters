@@ -47,6 +47,7 @@ function FileUpload() {
 
   return (
     <div>
+    <p>hello world</p>
       <input type="file" onChange={handleFileChange} />
       <button onClick={handleUpload} disabled={uploading}>
         {uploading ? 'Uploading...' : 'Upload'}
