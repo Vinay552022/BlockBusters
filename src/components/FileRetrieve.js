@@ -1,52 +1,55 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
 
-export default function FileRetrieve() {
-  const [hashValues, setHashValues] = useState(['bafkreigrmekxpit3va252sodhfrxdtqspoe7ac6gqiivewrveq4k55agyy', 'bafkreicxcl34vy2qwaranijjcmzfug2xuc527l5uxff3ycosxdlmtxzcwm']); // Replace with your actual Pinata hash values
-  const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(false);
+function ImageGallery() {
+  const [images, setImages] = useState([]);
   const [error, setError] = useState(null);
 
-  const retrieveFiles = async () => {
+  const fetchImages = async () => {
     try {
-      setLoading(true);
+      const response = await fetch('http://localhost:4005/retrieve', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ hashValues: ['bafybeihofqih6vmq3gstamuwnbasyhphve3skz57kpkrocg7hbih4al3my', 'bafybeifm2kfpjkfbbjd7vuwqt4s6yztc7zd5m54fyopkvr6lp3z2yuoozu'] })
+      });
 
-      // Send hash values to the backend
-      const response = await axios.post('http://localhost:4005/retrieve', { hashValues });
+      if (!response.ok) {
+        throw new Error('Failed to fetch images');
+      }
 
-      // Update state with received files
-      setFiles(response.data.files);
-
+      const data = await response.json();
+      console.log(data.files);
+      setImages(data.files);
     } catch (error) {
-      setError('Error retrieving files.');
-      console.error(error);
-    } finally {
-      setLoading(false);
+      console.error('Error fetching images:', error);
+      setError(error.message);
     }
   };
 
+  useEffect(() => {
+    fetchImages();
+  }, []);
+
   return (
     <div>
-      <button onClick={retrieveFiles} disabled={loading}>
-        {loading ? 'Retrieving...' : 'Retrieve Files'}
-      </button>
-      {error && <div>{error}</div>}
-      {files.length > 0 && (
-        <div>
-          <h3>Received Files:</h3>
-          <ul>
-            {files.map((file, index) => (
-              <li key={index}>
-                {file.type.startsWith('image/') ? (
-                  <img src={file.data} alt={`Image ${index}`} style={{ maxWidth: '100px' }} />
-                ) : (
-                  <p>{`File ${index}: ${file.filename}`}</p>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <button onClick={fetchImages}>Retrieve Images</button>
+      {error && <div>Error: {error}</div>}
+      {images.map((image, index) => (
+        <img key={index} src={`data:image/png;base64,${arrayBufferToBase64(image.fileBuffer.data)}`} alt={`Image ${index}`} />
+      ))}
     </div>
   );
 }
+
+function arrayBufferToBase64(buffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+export default ImageGallery;

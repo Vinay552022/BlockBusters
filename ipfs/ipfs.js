@@ -19,7 +19,9 @@ const upload = multer({ storage: storage });
 
 app.post("/upload", upload.single("file"), async (req, res) => {
   try {
+    
     const file = req.file;
+    
 
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
@@ -63,24 +65,39 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 });
 app.post("/retrieve", async (req, res) => {
   try {
-    const { ipfsHashes } = req.body;
+    const { hashValues } = req.body;
 
-    if (!ipfsHashes || !Array.isArray(ipfsHashes)) {
+    if (!hashValues || !Array.isArray(hashValues)) {
       return res.status(400).json({ error: "Invalid request format" });
     }
 
-    const files = await Promise.all(ipfsHashes.map(async (hash) => {
-      const response = await fetch(`https://gateway.pinata.cloud/ipfs/${hash}`);
-      const fileBuffer = await response.buffer(); // Fetch file as a Buffer
-      return { hash, fileBuffer };
+    const files = await Promise.all(hashValues.map(async (hash) => {
+      try {
+        const response = await axios.get(`https://harlequin-immediate-jellyfish-324.mypinata.cloud/ipfs/bafybeihofqih6vmq3gstamuwnbasyhphve3skz57kpkrocg7hbih4al3my`, {
+          
+          responseType: 'arraybuffer' // Set responseType to arraybuffer
+        });
+        console.log(response);
+        const fileBuffer = Buffer.from(response.data); // Convert response data to Buffer
+        return { hash, fileBuffer };
+
+      } catch (error) {
+        console.error(`Error fetching image with hash ${hash}:`, error.message);
+        return null; // Return null for failed fetch
+      }
     }));
 
-    res.json({ files });
+    // Filter out null values (failed fetches)
+    const filteredFiles = files.filter(file => file !== null);
+
+    res.json({ files: filteredFiles });
   } catch (error) {
-    console.error(error);
+    console.error('Error retrieving images:', error.message);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+
 
 app.listen(4005,()=>{
   console.log("app running on 4005")
